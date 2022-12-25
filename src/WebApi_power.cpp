@@ -3,9 +3,10 @@
  * Copyright (C) 2022 Thomas Basler and others
  */
 #include "WebApi_power.h"
-#include "ArduinoJson.h"
-#include "AsyncJson.h"
-#include "Hoymiles.h"
+#include "WebApi.h"
+#include "WebApi_errors.h"
+#include <AsyncJson.h>
+#include <Hoymiles.h>
 
 void WebApiPowerClass::init(AsyncWebServer* server)
 {
@@ -23,17 +24,15 @@ void WebApiPowerClass::loop()
 
 void WebApiPowerClass::onPowerStatus(AsyncWebServerRequest* request)
 {
+    if (!WebApi.checkCredentialsReadonly(request)) {
+        return;
+    }
+
     AsyncJsonResponse* response = new AsyncJsonResponse();
     JsonObject root = response->getRoot();
 
     for (uint8_t i = 0; i < Hoymiles.getNumInverters(); i++) {
         auto inv = Hoymiles.getInverterByPos(i);
-
-        // Inverter Serial is read as HEX
-        char buffer[sizeof(uint64_t) * 8 + 1];
-        snprintf(buffer, sizeof(buffer), "%0x%08x",
-            ((uint32_t)((inv->serial() >> 32) & 0xFFFFFFFF)),
-            ((uint32_t)(inv->serial() & 0xFFFFFFFF)));
 
         LastCommandSuccess status = inv->PowerCommand()->getLastPowerCommandSuccess();
         String limitStatus = "Unknown";
@@ -44,7 +43,7 @@ void WebApiPowerClass::onPowerStatus(AsyncWebServerRequest* request)
         } else if (status == LastCommandSuccess::CMD_PENDING) {
             limitStatus = "Pending";
         }
-        root[buffer]["power_set_status"] = limitStatus;
+        root[inv->serialString()]["power_set_status"] = limitStatus;
     }
 
     response->setLength();
@@ -53,12 +52,17 @@ void WebApiPowerClass::onPowerStatus(AsyncWebServerRequest* request)
 
 void WebApiPowerClass::onPowerPost(AsyncWebServerRequest* request)
 {
+    if (!WebApi.checkCredentials(request)) {
+        return;
+    }
+
     AsyncJsonResponse* response = new AsyncJsonResponse();
     JsonObject retMsg = response->getRoot();
     retMsg[F("type")] = F("warning");
 
     if (!request->hasParam("data", true)) {
         retMsg[F("message")] = F("No values found!");
+        retMsg[F("code")] = WebApiError::GenericNoValueFound;
         response->setLength();
         request->send(response);
         return;
@@ -68,6 +72,7 @@ void WebApiPowerClass::onPowerPost(AsyncWebServerRequest* request)
 
     if (json.length() > 1024) {
         retMsg[F("message")] = F("Data too large!");
+        retMsg[F("code")] = WebApiError::GenericDataTooLarge;
         response->setLength();
         request->send(response);
         return;
@@ -78,6 +83,7 @@ void WebApiPowerClass::onPowerPost(AsyncWebServerRequest* request)
 
     if (error) {
         retMsg[F("message")] = F("Failed to parse data!");
+        retMsg[F("code")] = WebApiError::GenericParseError;
         response->setLength();
         request->send(response);
         return;
@@ -86,6 +92,7 @@ void WebApiPowerClass::onPowerPost(AsyncWebServerRequest* request)
     if (!(root.containsKey("serial")
             && (root.containsKey("power") || root.containsKey("restart")))) {
         retMsg[F("message")] = F("Values are missing!");
+        retMsg[F("code")] = WebApiError::GenericValueMissing;
         response->setLength();
         request->send(response);
         return;
@@ -93,6 +100,7 @@ void WebApiPowerClass::onPowerPost(AsyncWebServerRequest* request)
 
     if (root[F("serial")].as<uint64_t>() == 0) {
         retMsg[F("message")] = F("Serial must be a number > 0!");
+        retMsg[F("code")] = WebApiError::PowerSerialZero;
         response->setLength();
         request->send(response);
         return;
@@ -102,6 +110,7 @@ void WebApiPowerClass::onPowerPost(AsyncWebServerRequest* request)
     auto inv = Hoymiles.getInverterBySerial(serial);
     if (inv == nullptr) {
         retMsg[F("message")] = F("Invalid inverter specified!");
+        retMsg[F("code")] = WebApiError::PowerInvalidInverter;
         response->setLength();
         request->send(response);
         return;
@@ -118,6 +127,7 @@ void WebApiPowerClass::onPowerPost(AsyncWebServerRequest* request)
 
     retMsg[F("type")] = F("success");
     retMsg[F("message")] = F("Settings saved!");
+    retMsg[F("code")] = WebApiError::GenericSuccess;
 
     response->setLength();
     request->send(response);

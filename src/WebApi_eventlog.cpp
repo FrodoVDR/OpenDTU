@@ -3,9 +3,9 @@
  * Copyright (C) 2022 Thomas Basler and others
  */
 #include "WebApi_eventlog.h"
-#include "ArduinoJson.h"
-#include "AsyncJson.h"
-#include "Hoymiles.h"
+#include "WebApi.h"
+#include <AsyncJson.h>
+#include <Hoymiles.h>
 
 void WebApiEventlogClass::init(AsyncWebServer* server)
 {
@@ -22,6 +22,10 @@ void WebApiEventlogClass::loop()
 
 void WebApiEventlogClass::onEventlogStatus(AsyncWebServerRequest* request)
 {
+    if (!WebApi.checkCredentialsReadonly(request)) {
+        return;
+    }
+
     AsyncJsonResponse* response = new AsyncJsonResponse(false, 2048);
     JsonObject root = response->getRoot();
 
@@ -34,16 +38,12 @@ void WebApiEventlogClass::onEventlogStatus(AsyncWebServerRequest* request)
     auto inv = Hoymiles.getInverterBySerial(serial);
 
     if (inv != nullptr) {
-        // Inverter Serial is read as HEX
-        char buffer[sizeof(uint64_t) * 8 + 1];
-        snprintf(buffer, sizeof(buffer), "%0x%08x",
-            ((uint32_t)((inv->serial() >> 32) & 0xFFFFFFFF)),
-            ((uint32_t)(inv->serial() & 0xFFFFFFFF)));
+        String serial = inv->serialString();
 
         uint8_t logEntryCount = inv->EventLog()->getEntryCount();
 
-        root[buffer]["count"] = logEntryCount;
-        JsonArray eventsArray = root[buffer].createNestedArray(F("events"));
+        root[serial]["count"] = logEntryCount;
+        JsonArray eventsArray = root[serial].createNestedArray(F("events"));
 
         for (uint8_t logEntry = 0; logEntry < logEntryCount; logEntry++) {
             JsonObject eventsObject = eventsArray.createNestedObject();

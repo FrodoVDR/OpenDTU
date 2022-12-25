@@ -3,7 +3,6 @@
 
 #include <DNSServer.h>
 #include <WiFi.h>
-#include <memory>
 #include <vector>
 
 enum class network_mode {
@@ -62,7 +61,6 @@ private:
     void setStaticIp();
     void setupMode();
     void NetworkEvent(WiFiEvent_t event);
-    static uint32_t getChipId();
     bool adminEnabled = true;
     bool forceDisconnection = false;
     int adminTimeoutCounter = 0;

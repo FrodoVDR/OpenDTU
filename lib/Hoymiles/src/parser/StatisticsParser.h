@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 #pragma once
 #include "Parser.h"
 #include <Arduino.h>
@@ -16,7 +17,7 @@ enum {
     UNIT_C,
     UNIT_PCT,
     UNIT_VA,
-    UNIT_CNT
+    UNIT_NONE
 };
 const char* const units[] = { "V", "A", "W", "Wh", "kWh", "Hz", "°C", "%", "var", "" };
 
@@ -32,7 +33,7 @@ enum {
     FLD_PAC,
     FLD_F,
     FLD_T,
-    FLD_PCT,
+    FLD_PF,
     FLD_EFF,
     FLD_IRR,
     FLD_PRA,
@@ -62,12 +63,14 @@ enum {
 };
 
 typedef struct {
+    uint8_t ch; // channel 0 - 4
     uint8_t fieldId; // field id
     uint8_t unitId; // uint id
-    uint8_t ch; // channel 0 - 4
     uint8_t start; // pos of first byte in buffer
     uint8_t num; // number of bytes in buffer
     uint16_t div; // divisor / calc command
+    bool isSigned; // allow negative numbers
+    uint8_t digits; // number of valid digits after the decimal point
 } byteAssign_t;
 
 class StatisticsParser : public Parser {
@@ -82,6 +85,7 @@ public:
     bool hasChannelFieldValue(uint8_t channel, uint8_t fieldId);
     const char* getChannelFieldUnit(uint8_t channel, uint8_t fieldId);
     const char* getChannelFieldName(uint8_t channel, uint8_t fieldId);
+    uint8_t getChannelFieldDigits(uint8_t channel, uint8_t fieldId);
 
     uint8_t getChannelCount();
 

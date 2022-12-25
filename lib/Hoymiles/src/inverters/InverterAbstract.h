@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 #pragma once
 
 #include "../commands/ActivePowerControlCommand.h"
@@ -33,11 +34,12 @@ public:
     explicit InverterAbstract(uint64_t serial);
     void init();
     uint64_t serial();
+    const String& serialString();
     void setName(const char* name);
     const char* name();
     virtual String typeName() = 0;
     virtual const byteAssign_t* getByteAssignment() = 0;
-    virtual const uint8_t getAssignmentCount() = 0;
+    virtual uint8_t getAssignmentCount() = 0;
 
     bool isProducing();
     bool isReachable();
@@ -64,6 +66,7 @@ public:
 
 private:
     serial_u _serial;
+    String _serialString;
     char _name[MAX_NAME_LENGTH] = "";
     fragment_t _rxFragmentBuffer[MAX_RF_FRAGMENT_COUNT];
     uint8_t _rxFragmentMaxPacketId = 0;

@@ -1,3 +1,8 @@
+
+// SPDX-License-Identifier: GPL-2.0-or-later
+/*
+ * Copyright (C) 2022 Thomas Basler and others
+ */
 #include "HM_2CH.h"
 
 HM_2CH::HM_2CH(uint64_t serial)
@@ -25,7 +30,7 @@ bool HM_2CH::isValidSerial(uint64_t serial)
 
 String HM_2CH::typeName()
 {
-    return String(F("HM-600, HM-700, HM-800"));
+    return F("HM-600, HM-700, HM-800");
 }
 
 const byteAssign_t* HM_2CH::getByteAssignment()
@@ -33,7 +38,7 @@ const byteAssign_t* HM_2CH::getByteAssignment()
     return byteAssignment;
 }
 
-const uint8_t HM_2CH::getAssignmentCount()
+uint8_t HM_2CH::getAssignmentCount()
 {
     return sizeof(byteAssignment) / sizeof(byteAssign_t);
 }

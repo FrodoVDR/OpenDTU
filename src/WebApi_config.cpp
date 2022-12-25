@@ -3,9 +3,10 @@
  * Copyright (C) 2022 Thomas Basler and others
  */
 #include "WebApi_config.h"
-#include "ArduinoJson.h"
-#include "AsyncJson.h"
 #include "Configuration.h"
+#include "WebApi.h"
+#include "WebApi_errors.h"
+#include <AsyncJson.h>
 #include <LittleFS.h>
 
 void WebApiConfigClass::init(AsyncWebServer* server)
@@ -32,17 +33,26 @@ void WebApiConfigClass::loop()
 
 void WebApiConfigClass::onConfigGet(AsyncWebServerRequest* request)
 {
+    if (!WebApi.checkCredentials(request)) {
+        return;
+    }
+
     request->send(LittleFS, CONFIG_FILENAME, String(), true);
 }
 
 void WebApiConfigClass::onConfigDelete(AsyncWebServerRequest* request)
 {
+    if (!WebApi.checkCredentials(request)) {
+        return;
+    }
+
     AsyncJsonResponse* response = new AsyncJsonResponse();
     JsonObject retMsg = response->getRoot();
     retMsg[F("type")] = F("warning");
 
     if (!request->hasParam("data", true)) {
         retMsg[F("message")] = F("No values found!");
+        retMsg[F("code")] = WebApiError::GenericNoValueFound;
         response->setLength();
         request->send(response);
         return;
@@ -52,6 +62,7 @@ void WebApiConfigClass::onConfigDelete(AsyncWebServerRequest* request)
 
     if (json.length() > 1024) {
         retMsg[F("message")] = F("Data too large!");
+        retMsg[F("code")] = WebApiError::GenericDataTooLarge;
         response->setLength();
         request->send(response);
         return;
@@ -62,6 +73,7 @@ void WebApiConfigClass::onConfigDelete(AsyncWebServerRequest* request)
 
     if (error) {
         retMsg[F("message")] = F("Failed to parse data!");
+        retMsg[F("code")] = WebApiError::GenericDataTooLarge;
         response->setLength();
         request->send(response);
         return;
@@ -69,6 +81,7 @@ void WebApiConfigClass::onConfigDelete(AsyncWebServerRequest* request)
 
     if (!(root.containsKey("delete"))) {
         retMsg[F("message")] = F("Values are missing!");
+        retMsg[F("code")] = WebApiError::GenericValueMissing;
         response->setLength();
         request->send(response);
         return;
@@ -76,6 +89,7 @@ void WebApiConfigClass::onConfigDelete(AsyncWebServerRequest* request)
 
     if (root[F("delete")].as<bool>() == false) {
         retMsg[F("message")] = F("Not deleted anything!");
+        retMsg[F("code")] = WebApiError::ConfigNotDeleted;
         response->setLength();
         request->send(response);
         return;
@@ -83,6 +97,7 @@ void WebApiConfigClass::onConfigDelete(AsyncWebServerRequest* request)
 
     retMsg[F("type")] = F("success");
     retMsg[F("message")] = F("Configuration resettet. Rebooting now...");
+    retMsg[F("code")] = WebApiError::ConfigSuccess;
 
     response->setLength();
     request->send(response);
@@ -93,6 +108,10 @@ void WebApiConfigClass::onConfigDelete(AsyncWebServerRequest* request)
 
 void WebApiConfigClass::onConfigUploadFinish(AsyncWebServerRequest* request)
 {
+    if (!WebApi.checkCredentials(request)) {
+        return;
+    }
+
     // the request handler is triggered after the upload has finished...
     // create the response, add header, and send response
 
@@ -108,6 +127,10 @@ void WebApiConfigClass::onConfigUploadFinish(AsyncWebServerRequest* request)
 
 void WebApiConfigClass::onConfigUpload(AsyncWebServerRequest* request, String filename, size_t index, uint8_t* data, size_t len, bool final)
 {
+    if (!WebApi.checkCredentials(request)) {
+        return;
+    }
+
     if (!index) {
         // open the file on first call and store the file handle in the request object
         request->_tempFile = LittleFS.open(CONFIG_FILENAME, "w");

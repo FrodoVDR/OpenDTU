@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 #pragma once
 
 #include "types.h"
@@ -14,15 +15,15 @@ public:
     virtual ~CommandAbstract() {};
 
     const uint8_t* getDataPayload();
-    void dumpDataPayload(Stream& stream);
+    void dumpDataPayload(Print* stream);
 
     uint8_t getDataSize();
 
     void setTargetAddress(uint64_t address);
-    const uint64_t getTargetAddress();
+    uint64_t getTargetAddress();
 
     void setRouterAddress(uint64_t address);
-    const uint64_t getRouterAddress();
+    uint64_t getRouterAddress();
 
     void setTimeout(uint32_t timeout);
     uint32_t getTimeout();

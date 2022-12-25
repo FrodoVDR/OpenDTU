@@ -1,23 +1,35 @@
-import { createWebHistory, createRouter, RouteRecordRaw } from 'vue-router';
-import HomeView from '@/components/HomeView.vue'
-import AboutView from '@/components/AboutView.vue'
-import NetworkInfoView from '@/components/NetworkInfoView.vue'
-import SystemInfoView from '@/components/SystemInfoView.vue'
-import NtpInfoView from '@/components/NtpInfoView.vue'
-import NetworkAdminView from '@/components/NetworkAdminView.vue'
-import NtpAdminView from '@/components/NtpAdminView.vue'
-import MqttAdminView from '@/components/MqttAdminView.vue'
-import MqttInfoView from '@/components/MqttInfoView.vue'
-import InverterAdminView from '@/components/InverterAdminView.vue'
-import DtuAdminView from '@/components/DtuAdminView.vue'
-import FirmwareUpgradeView from '@/components/FirmwareUpgradeView.vue'
-import ConfigAdminView from '@/components/ConfigAdminView.vue'
+import AboutView from '@/views/AboutView.vue';
+import ConfigAdminView from '@/views/ConfigAdminView.vue';
+import ConsoleInfoView from '@/views/ConsoleInfoView.vue';
+import DtuAdminView from '@/views/DtuAdminView.vue';
+import FirmwareUpgradeView from '@/views/FirmwareUpgradeView.vue';
+import HomeView from '@/views/HomeView.vue';
+import InverterAdminView from '@/views/InverterAdminView.vue';
+import LoginView from '@/views/LoginView.vue';
+import MaintenanceRebootView from '@/views/MaintenanceRebootView.vue';
+import MqttAdminView from '@/views/MqttAdminView.vue';
+import MqttInfoView from '@/views/MqttInfoView.vue';
+import NetworkAdminView from '@/views/NetworkAdminView.vue';
+import NetworkInfoView from '@/views/NetworkInfoView.vue';
+import NtpAdminView from '@/views/NtpAdminView.vue';
+import NtpInfoView from '@/views/NtpInfoView.vue';
+import SecurityAdminView from '@/views/SecurityAdminView.vue';
+import SystemInfoView from '@/views/SystemInfoView.vue';
+import { createRouter, createWebHistory } from 'vue-router';
 
-const routes: Array<RouteRecordRaw> = [
+const router = createRouter({
+    history: createWebHistory(import.meta.env.BASE_URL),
+    linkActiveClass: "active",
+    routes: [
     {
         path: '/',
         name: 'Home',
         component: HomeView
+    },
+    {
+        path: '/login',
+        name: 'Login',
+        component: LoginView
     },
     {
         path: '/about',
@@ -43,6 +55,11 @@ const routes: Array<RouteRecordRaw> = [
         path: '/info/mqtt',
         name: 'MqTT',
         component: MqttInfoView
+    },
+    {
+        path: '/info/console',
+        name: 'Web Console',
+        component: ConsoleInfoView
     },
     {
         path: '/settings/network',
@@ -78,13 +95,18 @@ const routes: Array<RouteRecordRaw> = [
         path: '/settings/config',
         name: 'Config Management',
         component: ConfigAdminView
+    },
+    {
+        path: '/settings/security',
+        name: 'Security',
+        component: SecurityAdminView
+    },
+    {
+        path: '/maintenance/reboot',
+        name: 'Device Reboot',
+        component: MaintenanceRebootView
     }
-];
-
-const router = createRouter({
-    history: createWebHistory(),
-    routes,
-    linkActiveClass: "active",
+]
 });
 
 export default router;

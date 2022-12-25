@@ -24,6 +24,9 @@ serial will be replaced with the serial number of the inverter.
 | [serial]/device/fwbuilddatetime         | R     | Build date / time of inverter firmware               |                            |
 | [serial]/device/hwpartnumber            | R     | Hardware part number of the inverter                 |                            |
 | [serial]/device/hwversion               | R     | Hardware version of the inverter                     |                            |
+| [serial]/status/reachable               | R     | Indicates whether the inverter is reachable          | 0 or 1                     |
+| [serial]/status/producing               | R     | Indicates whether the inverter is producing AC power | 0 or 1                     |
+| [serial]/status/last_update             | R     | Unix timestamp of last inverter statistics udpate    | seconds since JAN 01 1970 (UTC) |
 
 ### AC channel / global specific topics
 
@@ -39,7 +42,7 @@ serial will be replaced with the serial number of the inverter.
 | [serial]/0/temperature                  | R     | Temperature of inverter in degree celsius            | Degree Celsius (°C)        |
 | [serial]/0/voltage                      | R     | AC voltage in volt                                   | Volt (V)                   |
 | [serial]/0/yieldday                     | R     | Energy converted to AC per day in watt hours         | Watt hours (Wh)            |
-| [serial]/0/yieldtotal                   | R     | Energy converted to AC since reset watt hours        | Watt hours (Wh)            |
+| [serial]/0/yieldtotal                   | R     | Energy converted to AC since reset watt hours        | Kilo watt hours (kWh)      |
 
 ### DC input channel topics
 
@@ -52,7 +55,7 @@ serial will be replaced with the serial number of the inverter.
 | [serial]/[1-4]/power                    | R     | DC power of specific input in watt                   | Watt (W)                   |
 | [serial]/[1-4]/voltage                  | R     | DC voltage of specific input in volt                 | Volt (V)                   |
 | [serial]/[1-4]/yieldday                 | R     | Energy converted to AC per day on specific input     | Watt hours (Wh)            |
-| [serial]/[1-4]/yieldtotal               | R     | Energy converted to AC since reset on specific input | Watt hours (Wh)            |
+| [serial]/[1-4]/yieldtotal               | R     | Energy converted to AC since reset on specific input | Kilo watt hours (kWh)      |
 
 ### Inverter limit specific topics
 
@@ -62,11 +65,9 @@ cmd topics are used to set values. Status topics are updated from values set in 
 | ----------------------------------------- | ----- | ---------------------------------------------------- | -------------------------- |
 | [serial]/status/limit_relative            | R     | Current applied production limit of the inverter     | % of total possible output |
 | [serial]/status/limit_absolute            | R     | Current applied production limit of the inverter     | Watt (W)                   |
-| [serial]/status/reachable                 | R     | Indicates whether the inverter is reachable          | 0 or 1                     |
-| [serial]/status/producing                 | R     | Indicates whether the inverter is producing AC power | 0 or 1                     |
 | [serial]/cmd/limit_persistent_relative    | W     | Set the inverter limit as a percentage of total production capability. The  value will survive the night without power. The updated value will show up in the web GUI and limit_relative topic immediatly. | %                          |
-| [serial]/cmd/limit_persistent_absolute    | W     | Set the inverter limit as a absolute value. The  value will survive the night without power. The updated value will show up in the web GUI and limit_relative topic after around 4 minutes. | Watt (W)                   |
-| [serial]/cmd/limit_nonpersistent_relative | W     | Set the inverter limit as a percentage of total production capability. The  value will reset to the last persistent value at night without power. The updated value will show up in the web GUI and limit_relative topic immediatly. | %                          |
-| [serial]/cmd/limit_nonpersistent_absolute | W     | Set the inverter limit as a absolute value. The  value will reset to the last persistent value at night without power. The updated value will show up in the web GUI and limit_relative topic after around 4 minutes. | Watt (W)                   |
+| [serial]/cmd/limit_persistent_absolute    | W     | Set the inverter limit as a absolute value. The  value will survive the night without power. The updated value will set immediatly within the inverter but show up in the web GUI and limit_relative topic after around 4 minutes. If you are using a already known inverter (known Hardware ID), the updated value will show up within a few seconds. | Watt (W)                   |
+| [serial]/cmd/limit_nonpersistent_relative | W     | Set the inverter limit as a percentage of total production capability. The  value will reset to the last persistent value at night without power. The updated value will show up in the web GUI and limit_relative topic immediatly. The value must be published non-retained, otherwise it will be ignored! | %                          |
+| [serial]/cmd/limit_nonpersistent_absolute | W     | Set the inverter limit as a absolute value. The  value will reset to the last persistent value at night without power. The updated value will set immediatly within the inverter but show up in the web GUI and limit_relative topic after around 4 minutes. If you are using a already known inverter (known Hardware ID), the updated value will show up within a few seconds. The value must be published non-retained, otherwise it will be ignored! | Watt (W)                   |
 | [serial]/cmd/power                        | W      | Turn the inverter on (1) or off (0)                 | 0 or 1                     |
 | [serial]/cmd/restart                      | W      | Restarts the inverters (also resets YieldDay)       | 1                          |

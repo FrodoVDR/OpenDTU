@@ -1,4 +1,9 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+/*
+ * Copyright (C) 2022 Thomas Basler and others
+ */
 #include "StatisticsParser.h"
+#include "../Hoymiles.h"
 
 static float calcYieldTotalCh0(StatisticsParser* iv, uint8_t arg0);
 static float calcYieldDayCh0(StatisticsParser* iv, uint8_t arg0);
@@ -38,7 +43,7 @@ void StatisticsParser::clearBuffer()
 void StatisticsParser::appendFragment(uint8_t offset, uint8_t* payload, uint8_t len)
 {
     if (offset + len > STATISTIC_PACKET_SIZE) {
-        Serial.printf("FATAL: (%s, %d) stats packet too large for buffer\n", __FILE__, __LINE__);
+        Hoymiles.getMessageOutput()->printf("FATAL: (%s, %d) stats packet too large for buffer\n", __FILE__, __LINE__);
         return;
     }
     memcpy(&_payloadStatistic[offset], payload, len);
@@ -79,7 +84,17 @@ float StatisticsParser::getChannelFieldValue(uint8_t channel, uint8_t fieldId)
             val |= _payloadStatistic[ptr];
         } while (++ptr != end);
 
-        return static_cast<float>(val) / static_cast<float>(div);
+        float result;
+        if (b[pos].isSigned && b[pos].num == 2) {
+            result = static_cast<float>(static_cast<int16_t>(val));
+        } else if (b[pos].isSigned && b[pos].num == 4) {
+            result = static_cast<float>(static_cast<int32_t>(val));
+        } else {
+            result = static_cast<float>(val);
+        }
+
+        result /= static_cast<float>(div);
+        return result;
     } else {
         // Value has to be calculated
         return calcFunctions[b[pos].start].func(this, b[pos].num);
@@ -108,6 +123,12 @@ const char* StatisticsParser::getChannelFieldName(uint8_t channel, uint8_t field
     const byteAssign_t* b = _byteAssignment;
 
     return fields[b[pos].fieldId];
+}
+
+uint8_t StatisticsParser::getChannelFieldDigits(uint8_t channel, uint8_t fieldId)
+{
+    uint8_t pos = getAssignIdxByChannelField(channel, fieldId);
+    return _byteAssignment[pos].digits;
 }
 
 uint8_t StatisticsParser::getChannelCount()

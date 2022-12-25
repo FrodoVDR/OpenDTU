@@ -3,10 +3,11 @@
  * Copyright (C) 2022 Thomas Basler and others
  */
 #include "WebApi_dtu.h"
-#include "ArduinoJson.h"
-#include "AsyncJson.h"
 #include "Configuration.h"
-#include "Hoymiles.h"
+#include "WebApi.h"
+#include "WebApi_errors.h"
+#include <AsyncJson.h>
+#include <Hoymiles.h>
 
 void WebApiDtuClass::init(AsyncWebServer* server)
 {
@@ -24,6 +25,10 @@ void WebApiDtuClass::loop()
 
 void WebApiDtuClass::onDtuAdminGet(AsyncWebServerRequest* request)
 {
+    if (!WebApi.checkCredentials(request)) {
+        return;
+    }
+
     AsyncJsonResponse* response = new AsyncJsonResponse();
     JsonObject root = response->getRoot();
     const CONFIG_T& config = Configuration.get();
@@ -43,12 +48,17 @@ void WebApiDtuClass::onDtuAdminGet(AsyncWebServerRequest* request)
 
 void WebApiDtuClass::onDtuAdminPost(AsyncWebServerRequest* request)
 {
+    if (!WebApi.checkCredentials(request)) {
+        return;
+    }
+
     AsyncJsonResponse* response = new AsyncJsonResponse();
     JsonObject retMsg = response->getRoot();
     retMsg[F("type")] = F("warning");
 
     if (!request->hasParam("data", true)) {
         retMsg[F("message")] = F("No values found!");
+        retMsg[F("code")] = WebApiError::GenericNoValueFound;
         response->setLength();
         request->send(response);
         return;
@@ -58,6 +68,7 @@ void WebApiDtuClass::onDtuAdminPost(AsyncWebServerRequest* request)
 
     if (json.length() > 1024) {
         retMsg[F("message")] = F("Data too large!");
+        retMsg[F("code")] = WebApiError::GenericDataTooLarge;
         response->setLength();
         request->send(response);
         return;
@@ -68,6 +79,7 @@ void WebApiDtuClass::onDtuAdminPost(AsyncWebServerRequest* request)
 
     if (error) {
         retMsg[F("message")] = F("Failed to parse data!");
+        retMsg[F("code")] = WebApiError::GenericParseError;
         response->setLength();
         request->send(response);
         return;
@@ -75,6 +87,7 @@ void WebApiDtuClass::onDtuAdminPost(AsyncWebServerRequest* request)
 
     if (!(root.containsKey("dtu_serial") && root.containsKey("dtu_pollinterval") && root.containsKey("dtu_palevel"))) {
         retMsg[F("message")] = F("Values are missing!");
+        retMsg[F("code")] = WebApiError::GenericValueMissing;
         response->setLength();
         request->send(response);
         return;
@@ -82,6 +95,7 @@ void WebApiDtuClass::onDtuAdminPost(AsyncWebServerRequest* request)
 
     if (root[F("dtu_serial")].as<uint64_t>() == 0) {
         retMsg[F("message")] = F("Serial cannot be zero!");
+        retMsg[F("code")] = WebApiError::DtuSerialZero;
         response->setLength();
         request->send(response);
         return;
@@ -89,6 +103,7 @@ void WebApiDtuClass::onDtuAdminPost(AsyncWebServerRequest* request)
 
     if (root[F("dtu_pollinterval")].as<uint32_t>() == 0) {
         retMsg[F("message")] = F("Poll interval must be greater zero!");
+        retMsg[F("code")] = WebApiError::DtuPollZero;
         response->setLength();
         request->send(response);
         return;
@@ -96,6 +111,7 @@ void WebApiDtuClass::onDtuAdminPost(AsyncWebServerRequest* request)
 
     if (root[F("dtu_palevel")].as<uint8_t>() > 3) {
         retMsg[F("message")] = F("Invalid power level setting!");
+        retMsg[F("code")] = WebApiError::DtuInvalidPowerLevel;
         response->setLength();
         request->send(response);
         return;
@@ -111,6 +127,7 @@ void WebApiDtuClass::onDtuAdminPost(AsyncWebServerRequest* request)
 
     retMsg[F("type")] = F("success");
     retMsg[F("message")] = F("Settings saved!");
+    retMsg[F("code")] = WebApiError::GenericSuccess;
 
     response->setLength();
     request->send(response);

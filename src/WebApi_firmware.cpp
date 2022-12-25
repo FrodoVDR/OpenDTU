@@ -3,11 +3,11 @@
  * Copyright (C) 2022 Thomas Basler and others
  */
 #include "WebApi_firmware.h"
-#include "ArduinoJson.h"
-#include "AsyncJson.h"
 #include "Configuration.h"
 #include "Update.h"
+#include "WebApi.h"
 #include "helper.h"
+#include <AsyncJson.h>
 
 void WebApiFirmwareClass::init(AsyncWebServer* server)
 {
@@ -31,6 +31,10 @@ void WebApiFirmwareClass::loop()
 
 void WebApiFirmwareClass::onFirmwareUpdateFinish(AsyncWebServerRequest* request)
 {
+    if (!WebApi.checkCredentials(request)) {
+        return;
+    }
+
     // the request handler is triggered after the upload has finished...
     // create the response, add header, and send response
 
@@ -46,6 +50,10 @@ void WebApiFirmwareClass::onFirmwareUpdateFinish(AsyncWebServerRequest* request)
 
 void WebApiFirmwareClass::onFirmwareUpdateUpload(AsyncWebServerRequest* request, String filename, size_t index, uint8_t* data, size_t len, bool final)
 {
+    if (!WebApi.checkCredentials(request)) {
+        return;
+    }
+
     // Upload handler chunks in data
     if (!index) {
         if (!request->hasParam("MD5", true)) {
